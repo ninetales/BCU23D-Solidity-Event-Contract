@@ -1,6 +1,6 @@
 # Solidity Contract - Event Manager
 
-# Gas optimization and security practices
+### Gas optimization and security practices
 
 - Use of ++i instead of i++ in loops
   I have used ++i in my loops because it is slightly more gas-efficient than i++. This is due to how Solidity handles incrementing operations. ++i increments the value in place, while i++ creates a temporary copy of the variable before incrementing it.
