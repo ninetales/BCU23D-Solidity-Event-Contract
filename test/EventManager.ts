@@ -51,21 +51,19 @@ describe('EventManager', function () {
     });
 
     describe('createEvent', async function () {
-        it('should emit "NewEventCreated" when a an event was created', async () => {
-            const { eventManager } = await deployContractFixture();
-            await expect(eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture)).to.emit(eventManager, 'NewEventCreated');
-        });
 
-        it('should produce an error when timestamp is set in the past', async () => {
+        it('should produce an error when timestamp is set in the past [require]', async () => {
             const timestampInPast = 0;
             const { eventManager } = await deployContractFixture();
             await expect(eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInPast)).to.be.revertedWith("Cannot set a timestamp in the past. Try again with a UNIX Timestamp in the future.");
         });
 
-        it('should increment the eventCounter by 1', async () => {
+        it('should emit "NewEventCreated" when a an event was created', async () => {
             const { eventManager } = await deployContractFixture();
-            await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
+            await expect(eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture)).to.emit(eventManager, 'NewEventCreated');
         });
+
+
     });
 
     describe('listEvents', async function () {
@@ -89,6 +87,12 @@ describe('EventManager', function () {
     });
 
     describe('showEventDetails', async () => {
+
+        it('should produce an error when an event wasn\'t found', async () => {
+            const { eventManager } = await deployContractFixture();
+            await expect(eventManager.showEventDetails("")).to.be.revertedWithCustomError(eventManager, "NoEventFound");
+        });
+
         it('should return a tuple with the event details', async () => {
 
             const { eventManager, owner } = await deployContractFixture();
@@ -105,14 +109,10 @@ describe('EventManager', function () {
             expect(_status).to.equal(0);
         });
 
-        it('should produce an error when an event wasn\'t found', async () => {
-            const { eventManager } = await deployContractFixture();
-            await expect(eventManager.showEventDetails("")).to.be.revertedWithCustomError(eventManager, "NoEventFound");
-        });
     });
 
     describe('listEventParticipants', async () => {
-        it('should produce an error when an ID is not provided', async () => {
+        it('should produce an error when an ID is not provided [require]', async () => {
             const { eventManager } = await deployContractFixture();
             await expect(eventManager.listEventParticipants("")).to.be.revertedWith("Event ID cannot be empty");
         });
@@ -127,12 +127,12 @@ describe('EventManager', function () {
     });
 
     describe('togglePauseEventRegistration', async () => {
-        it('should produce an error when an event doesnt exist with a specific ID', async () => {
+        it('should produce an error when an event doesnt exist with a specific ID [require]', async () => {
             const { eventManager } = await deployContractFixture();
             await expect(eventManager.togglePauseEventRegistration("wrong-id", 1)).to.be.revertedWith("No event with that ID was found");
         });
 
-        it('should produce an error when the event status is already set to the requested update', async () => {
+        it('should produce an error when the event status is already set to the requested update [require]', async () => {
             const { eventManager } = await deployContractFixture();
             const newStatus = 0; // Enum: 0 = Active (Standard value), 1 = Paused
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
@@ -165,25 +165,25 @@ describe('EventManager', function () {
             });
         });
 
-        it('should produce an error when no event was found with the provided ID', async () => {
+        it('should produce an error when no event was found with the provided ID [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await expect(eventManager.connect(addr1).buyTicket("1337", fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("No event with that ID was found!");
         });
 
-        it('should produce an error if the organier tries to buy a ticket to its own event', async () => {
+        it('should produce an error if the organier tries to buy a ticket to its own event [require]', async () => {
             const { eventManager } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
             await expect(eventManager.buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("You cannot buy a ticket for your own event");
         });
 
-        it('should produce an error if user tries to buy another ticket for same event', async () => {
+        it('should produce an error if user tries to buy another ticket for same event [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
             await eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") });
             await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("You have already purchased a ticket. You cannot buy another one..");
         });
 
-        it('should produce an error if user tries to buy a ticket after the event has ended', async () => {
+        it('should produce an error if user tries to buy a ticket after the event has ended [require]', async () => {
             const timestampAddition = 1695128940;
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
@@ -198,20 +198,20 @@ describe('EventManager', function () {
             await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("Too late to buy a ticket! Better luck next time.");
         });
 
-        it('should produce an error if user tries to buy a ticket after the event has been paused', async () => {
+        it('should produce an error if user tries to buy a ticket after the event has been paused [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
             await eventManager.togglePauseEventRegistration(eventId, 1); // Enum: 0 = Active (Standard value), 1 = Paused
             await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith('The ticket sales has been paused. Please try again later.');
         });
 
-        it('should produce an error if user tries to buy a ticket after the event has been sold out', async () => {
+        it('should produce an error if user tries to buy a ticket after the event has been sold out [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, 0, priceInEther, timestampInFuture);
             await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("Tickets are sold out");
         });
 
-        it('should produce an error if user tries to buy a ticket with an insufficient balance', async () => {
+        it('should produce an error if user tries to buy a ticket with an insufficient balance [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
             await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("0.5") })).to.be.revertedWith("Not enough funds to buy a ticket! Refill account and please try again.");
@@ -234,6 +234,11 @@ describe('EventManager', function () {
             );
 
             const receipt = await tx.wait();
+
+            if (!receipt) {
+                throw new Error('Transaction receipt is null');
+            }
+
             const totalGasPrice = receipt.gasUsed * receipt.gasPrice;
             const paidTicketPrice = hre.ethers.parseEther(priceInEther.toString());
             const totalTicketCost = paidTicketPrice + totalGasPrice;
@@ -252,12 +257,30 @@ describe('EventManager', function () {
             expect(ticketExist).to.be.false;
         });
 
+        it('should return false when no ticket is found', async () => {
+            const { eventManager, addr1 } = await deployContractFixture();
+            await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
+            const [ticketExist] = await eventManager.connect(addr1).getUserTicket(eventId);
+            expect(ticketExist).to.be.false;
+        });
+
         it('should return a ticket for an event', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
             const tx = await eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") });
-            const blockNumber = tx.blockNumber;
+            const receipt = await tx.wait();
+
+            if (!receipt) {
+                throw new Error('Transaction receipt is null');
+            }
+
+            const blockNumber = receipt.blockNumber;
             const block = await hre.ethers.provider.getBlock(blockNumber);
+
+            if (!block) {
+                throw new Error('Block is null');
+            }
+
             const [, ticketData] = await eventManager.connect(addr1).getUserTicket(eventId);
 
 
@@ -293,7 +316,7 @@ describe('EventManager', function () {
             await expect(eventManager.connect(addr1).cancelTicket(eventId)).to.be.revertedWithCustomError(eventManager, "NoTicketFound");
         });
 
-        it('should provide an error message when passed the refund date', async () => {
+        it('should provide an error message when passed the refund date [require]', async () => {
             const refundTimestamp = 1758232800;
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
@@ -320,6 +343,11 @@ describe('EventManager', function () {
             const initialBalance = await ethers.provider.getBalance(addr1);
             const tx = await eventManager.connect(addr1).cancelTicket(eventId);
             const receipt = await tx.wait();
+
+            if (!receipt) {
+                throw new Error('Transaction receipt is null');
+            }
+
             const totalGasPrice = receipt.gasUsed * receipt.gasPrice;
             const expectedBalance = initialBalance + ticketData.paidPrice - totalGasPrice;
 

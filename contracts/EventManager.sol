@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract EventManager is ReentrancyGuard {
     address private owner;
@@ -12,7 +12,7 @@ contract EventManager is ReentrancyGuard {
 
     constructor() {
         owner = msg.sender;
-        eventsCounter = 0;
+        eventsCounter = 1;
         refundTimespan = 86400;
     }
 
@@ -61,7 +61,7 @@ contract EventManager is ReentrancyGuard {
     // ==========================================================================================
     // Maps
     // ==========================================================================================
-    mapping(string => Event) internal events;
+    mapping(string => Event) private events;
 
     // ==========================================================================================
     // Events
@@ -79,7 +79,6 @@ contract EventManager is ReentrancyGuard {
 
         require(block.timestamp < _eventDate, "Cannot set a timestamp in the past. Try again with a UNIX Timestamp in the future.");
 
-        eventsCounter++;
         string memory _eventId = string(abi.encodePacked("ev", Strings.toString(eventsCounter)));
         uint256 _priceInWei = _priceInEther * 1 ether;
 
@@ -93,6 +92,7 @@ contract EventManager is ReentrancyGuard {
         newEvent.status = EventStatus.Active;
 
         eventsIdList.push(_eventId);
+        eventsCounter++;
 
         emit NewEventCreated(_eventId, _name, msg.sender, _eventDate, EventStatus.Active);
 
@@ -199,7 +199,7 @@ contract EventManager is ReentrancyGuard {
             return (false, Ticket(address(0), "", "", "", 0, 0), 0); 
         }
 
-        for(uint16 i = 0; i < eventData.tickets.length; i++){
+        for(uint16 i = 0; i < eventData.tickets.length; ++i){
             if(eventData.tickets[i].owner == msg.sender){
                 return (
                     true,
