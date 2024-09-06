@@ -371,6 +371,16 @@ describe('EventManager', function () {
 
             expect(await eventManager.getContractBalance()).to.be.equal(hre.ethers.parseEther(tempTicketPriceInEther.toString()));
         });
+
+        it('should return the contract balance of 2 ether in wei', async () => {
+            const tempTicketPriceInEther = 1;
+            const { eventManager, addr1, addr2 } = await deployContractFixture();
+            await eventManager.createEvent(eventName, 5, tempTicketPriceInEther, timestampInFuture);
+            await eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") });
+            await eventManager.connect(addr2).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") });
+
+            expect(await eventManager.getContractBalance()).to.be.equal(hre.ethers.parseEther("2"));
+        });
     });
 
     describe('fallback', async () => {
@@ -379,7 +389,7 @@ describe('EventManager', function () {
             await expect(
                 addr1.sendTransaction({
                     to: eventManager.getAddress(),
-                    data: "0x"  // Empty data triggers the fallback function
+                    data: "0x"
                 })
             ).to.emit(eventManager, "Log");
         });
