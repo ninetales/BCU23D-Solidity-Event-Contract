@@ -145,6 +145,7 @@ describe('EventManager', function () {
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
             await expect(eventManager.togglePauseEventRegistration("ev1", newStatus)).to.emit(eventManager, "EventStatusUpdated");
         });
+
     });
 
     describe('buyTicket', async () => {

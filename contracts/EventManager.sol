@@ -216,7 +216,7 @@ contract EventManager is ReentrancyGuard {
     // **********************************************
     // Cancel user ticket for an event
     // **********************************************
-    function cancelTicket(string memory _eventId) public {
+    function cancelTicket(string memory _eventId) public nonReentrant {
         
         (bool ticketExist, Ticket memory _userTicket, uint16 _currentTicketIndex) = getUserTicket(_eventId);
         if(!ticketExist){
