@@ -18,4 +18,4 @@
   I have used custom errors in my contract to improve both gas efficiency and code clarity. Custom errors provide a more gas-efficient way to handle exceptions compared to traditional require statements with string messages. They are more gas-efficient and a better way explain to users why an operation failed.
 
 Link to contract on etherscan:
-https://sepolia.etherscan.io/address/0x3bf65fc3ec236cce5b293ef986bf44a6d27444a0
+https://sepolia.etherscan.io/address/0x3Bf65fC3eC236CCe5b293EF986bf44A6D27444A0#code
