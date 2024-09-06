@@ -21,6 +21,12 @@ contract EventManager is ReentrancyGuard {
     // ==========================================================================================
     error NoTicketFound(address owner, string eventId);
     error NoEventFound(string eventId);
+    error OrganizerCannotBuyTicket(address owner, string eventId);
+    error TicketAlreadyExists(address owner, string eventId);
+    error PassedEventDate(string eventName, uint256 eventDate);
+    error EventPaused(string eventName);
+    error SoldOutTickets(string eventName);
+    error NotEnoughFunds(uint256 funds, uint256 requiredFunds);
 
     // ==========================================================================================
     // Enums
@@ -160,13 +166,33 @@ contract EventManager is ReentrancyGuard {
         Event storage eventData = events[_eventId];
         (bool ticketExist, ,) = getUserTicket(_eventId);
 
-        require(eventData.creator != address(0), "No event with that ID was found!");
-        require(msg.sender != eventData.creator, "You cannot buy a ticket for your own event");
-        require(!ticketExist, "You have already purchased a ticket. You cannot buy another one..");
-        require(eventData.eventDate > block.timestamp, "Too late to buy a ticket! Better luck next time.");
-        require(eventData.status != EventStatus.Paused, "The ticket sales has been paused. Please try again later.");
-        require(eventData.tickets.length < eventData.ticketLimit, "Tickets are sold out");
-        require(msg.value >= eventData.price, "Not enough funds to buy a ticket! Refill account and please try again.");
+        if(eventData.creator == address(0)){
+            revert NoEventFound(_eventId);
+        }
+
+        if(msg.sender == eventData.creator){
+            revert OrganizerCannotBuyTicket(msg.sender, _eventId);
+        }
+
+        if(ticketExist){
+            revert TicketAlreadyExists(msg.sender, _eventId);
+        }
+
+        if(eventData.eventDate < block.timestamp){
+            revert PassedEventDate(eventData.name, eventData.eventDate);
+        }
+
+        if(eventData.status == EventStatus.Paused){
+            revert EventPaused(eventData.name);
+        }
+
+        if(eventData.tickets.length >= eventData.ticketLimit){
+            revert SoldOutTickets(eventData.name);
+        }
+
+        if(msg.value < eventData.price){
+            revert NotEnoughFunds(msg.value, eventData.price);
+        }
 
         Ticket memory newTicket = Ticket({
             owner: msg.sender,

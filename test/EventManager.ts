@@ -167,20 +167,20 @@ describe('EventManager', function () {
 
         it('should produce an error when no event was found with the provided ID [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
-            await expect(eventManager.connect(addr1).buyTicket("1337", fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("No event with that ID was found!");
+            await expect(eventManager.connect(addr1).buyTicket("1337", fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWithCustomError(eventManager, "NoEventFound");
         });
 
         it('should produce an error if the organier tries to buy a ticket to its own event [require]', async () => {
             const { eventManager } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
-            await expect(eventManager.buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("You cannot buy a ticket for your own event");
+            await expect(eventManager.buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWithCustomError(eventManager, "OrganizerCannotBuyTicket");
         });
 
         it('should produce an error if user tries to buy another ticket for same event [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
             await eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") });
-            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("You have already purchased a ticket. You cannot buy another one..");
+            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWithCustomError(eventManager, "TicketAlreadyExists");
         });
 
         it('should produce an error if user tries to buy a ticket after the event has ended [require]', async () => {
@@ -195,26 +195,26 @@ describe('EventManager', function () {
             });
             await hre.network.provider.send('evm_mine');
 
-            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("Too late to buy a ticket! Better luck next time.");
+            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWithCustomError(eventManager, "PassedEventDate");
         });
 
         it('should produce an error if user tries to buy a ticket after the event has been paused [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
             await eventManager.togglePauseEventRegistration(eventId, 1); // Enum: 0 = Active (Standard value), 1 = Paused
-            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith('The ticket sales has been paused. Please try again later.');
+            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWithCustomError(eventManager, "EventPaused");
         });
 
         it('should produce an error if user tries to buy a ticket after the event has been sold out [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, 0, priceInEther, timestampInFuture);
-            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWith("Tickets are sold out");
+            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") })).to.be.revertedWithCustomError(eventManager, "SoldOutTickets");
         });
 
         it('should produce an error if user tries to buy a ticket with an insufficient balance [require]', async () => {
             const { eventManager, addr1 } = await deployContractFixture();
             await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
-            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("0.5") })).to.be.revertedWith("Not enough funds to buy a ticket! Refill account and please try again.");
+            await expect(eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("0.5") })).to.be.revertedWithCustomError(eventManager, "NotEnoughFunds");
         });
 
         it('should emit "NewTicketCreated" when a ticket was bought', async () => {
