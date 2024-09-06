@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract EventManager is ReentrancyGuard{
+contract EventManager is ReentrancyGuard {
     address private owner;
     uint16 private eventsCounter;
     uint256 private refundTimespan;

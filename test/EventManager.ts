@@ -13,7 +13,6 @@ describe('EventManager', function () {
     let fname = "John";
     let lname = "Connor";
     let email = "john.connor@terminator.io";
-    let walletBalance = 100;
 
 
 
@@ -23,6 +22,33 @@ describe('EventManager', function () {
         const eventManager = await EventManager.deploy();
         return { eventManager, owner, addr1, addr2 };
     };
+
+    describe('admin modifier', async function () {
+
+        it('should produce an error when a non contract owner tries to list event participants', async () => {
+            const { eventManager, addr1 } = await deployContractFixture();
+            await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
+            await eventManager.connect(addr1).buyTicket(eventId, fname, lname, email, { value: hre.ethers.parseEther("2") });
+            await expect(eventManager.connect(addr1).listEventParticipants("ev1")).to.be.revertedWith("Access denied! You must be the owner of this contract.");
+        });
+
+        it('should produce an error when a non contract owner tries to create an event', async () => {
+            const { eventManager, addr1 } = await deployContractFixture();
+            await expect(eventManager.connect(addr1).createEvent(eventName, ticketLimit, priceInEther, timestampInFuture)).to.be.revertedWith("Access denied! You must be the owner of this contract.");
+        });
+
+        it('should produce an error when a non contract owner tries to toggle the pause status of an event', async () => {
+            const { eventManager, addr1 } = await deployContractFixture();
+            await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
+            await expect(eventManager.connect(addr1).togglePauseEventRegistration("ev1", 1)).to.be.revertedWith("Access denied! You must be the owner of this contract.");
+        });
+
+        it('should prouce an error when a non contract owner tries to view the contract balance', async () => {
+            const { eventManager, addr1 } = await deployContractFixture();
+            await expect(eventManager.connect(addr1).getContractBalance()).to.be.revertedWith("Access denied! You must be the owner of this contract.");
+        });
+
+    });
 
     describe('createEvent', async function () {
         it('should emit "NewEventCreated" when a an event was created', async () => {
@@ -34,6 +60,11 @@ describe('EventManager', function () {
             const timestampInPast = 0;
             const { eventManager } = await deployContractFixture();
             await expect(eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInPast)).to.be.revertedWith("Cannot set a timestamp in the past. Try again with a UNIX Timestamp in the future.");
+        });
+
+        it('should increment the eventCounter by 1', async () => {
+            const { eventManager } = await deployContractFixture();
+            await eventManager.createEvent(eventName, ticketLimit, priceInEther, timestampInFuture);
         });
     });
 
@@ -72,6 +103,11 @@ describe('EventManager', function () {
             expect(_price).to.be.equal(priceInWei);
             expect(_eventDate).to.be.equal(timestampInFuture);
             expect(_status).to.equal(0);
+        });
+
+        it('should produce an error when an event wasn\'t found', async () => {
+            const { eventManager } = await deployContractFixture();
+            await expect(eventManager.showEventDetails("")).to.be.revertedWithCustomError(eventManager, "NoEventFound");
         });
     });
 
